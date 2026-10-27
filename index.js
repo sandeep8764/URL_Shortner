@@ -1,63 +1,59 @@
-require("dotenv").config();
+require('dotenv').config();
 
-const express = require("express");
-const path = require("path");
-const { connectMongoDB } = require("./connection");
+const express = require('express');
+const path = require('path');
+const { connectMongoDB } = require('./connection');
+const URL = require('./models/url');
+const staticRouter = require('./routes/staticRouter');
+const userRouter = require('./routes/user');
+const urlRouter = require('./routes/url');
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = Number(process.env.PORT || 8000);
 
-app.set("view engine", "ejs");
-app.set("views", path.resolve(__dirname, "views"));
-
-connectMongoDB()
-    .then(() => console.log("MongoDB Connected"))
-    .catch((error) => {
-        console.error("MongoDB connection failed:", error.message);
-    });
-
-const urlRoute = require("./routes/url");
-const URL = require("./models/url");
-const staticRouter = require("./routes/staticRouter");
-const userRoute = require("./routes/user");
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.json());
-app.use(
-    express.urlencoded({
-        extended: false,
-    })
-);
+app.use(express.urlencoded({ extended: true }));
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use('/', staticRouter);
+app.use('/user', userRouter);
+app.use('/url', urlRouter);
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use("/url", urlRoute);
-app.use("/user", userRoute);
-
-app.get("/:shortId", async (req, res) => {
-    const shortId = req.params.shortId;
-
-    const entry = await URL.findOneAndUpdate(
-        {
-            shortId,
-        },
-        {
-            $push: {
-                visitHistory: {
-                    timestamp: Date.now(),
-                },
-            },
-        }
-    );
+app.get('/:shortId', async (req, res) => {
+  try {
+    const { shortId } = req.params;
+    const entry = await URL.findOne({ shortId });
 
     if (!entry) {
-        return res.status(404).send("Short URL Not Found");
+      return res.status(404).send('URL not found');
     }
 
+    const now = Date.now();
+    entry.visitHistory.push({ timestamp: now });
+    await entry.save();
+
     return res.redirect(entry.redirectURL);
+  } catch (error) {
+    console.error('Redirect error:', error);
+    return res.status(500).send('Unable to redirect');
+  }
 });
 
-app.use("/", staticRouter);
-
-app.listen(PORT, () => {
-    console.log(`Server Started on port ${PORT}`);
+app.use((req, res) => {
+  res.status(404).send('Not Found');
 });
+
+connectMongoDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`URL shortener running at http://localhost:${PORT}`);
+      console.log('Connected to MongoDB successfully');
+    });
+  })
+  .catch((error) => {
+    console.error('MongoDB connection failed:', error.message);
+    process.exit(1);
+  });

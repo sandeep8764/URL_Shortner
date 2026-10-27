@@ -4,238 +4,723 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>URL Shortener Dashboard</title>
+    <title>ShortURL</title>
     <style>
         * {
             box-sizing: border-box;
         }
 
+        :root {
+            --bg: #f5f2ee;
+            --panel: #ffffff;
+            --panel-soft: #f8f5f2;
+            --line: #ddd3ca;
+            --text: #1f1b18;
+            --muted: #6b625d;
+            --orange: #f97316;
+            --orange-dark: #ea580c;
+            --orange-soft: #fff4eb;
+            --success-bg: #f0fdf4;
+            --success-text: #166534;
+            --error-bg: #fef2f2;
+            --error-text: #9f1239;
+            --shadow: 0 6px 0 rgba(31, 27, 24, 0.08);
+        }
+
+        html,
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #0f172a, #111827);
-            color: #e5e7eb;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 40px 20px 80px;
+            padding: 24px 20px 64px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 0 30px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .brand-mark {
+            width: 28px;
+            height: 28px;
+            background: var(--orange);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 2px solid #1f1b18;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0 16px;
+            border: 2px solid var(--text);
+            background: var(--orange);
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: 0.15s ease;
+            box-shadow: var(--shadow);
+            border-radius: 0;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            background: var(--orange-dark);
+        }
+
+        .btn-secondary {
+            background: var(--panel);
+            color: var(--text);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text);
+            box-shadow: none;
         }
 
         .hero {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
-
-        .hero p {
-            color: #cbd5e1;
-            font-size: 1.05rem;
-        }
-
-        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: 1.1fr 0.9fr;
             gap: 20px;
+            align-items: stretch;
         }
 
-        .card {
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        .hero-copy,
+        .panel {
+            background: var(--panel);
+            border: 2px solid var(--line);
+            box-shadow: var(--shadow);
+            padding: 28px;
         }
 
-        label {
-            display: block;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-            color: #cbd5e1;
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(31, 27, 24, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 40;
         }
 
-        input,
-        button {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 10px;
-            border: 1px solid #334155;
-            margin-bottom: 12px;
-            font-size: 1rem;
+        .modal-overlay.hidden {
+            display: none;
         }
 
-        input {
-            background: #0f172a;
-            color: white;
+        .auth-modal {
+            width: min(100%, 440px);
+            background: var(--panel);
+            border: 2px solid var(--text);
+            box-shadow: 0 12px 0 rgba(31, 27, 24, 0.12);
+            position: relative;
         }
 
-        button {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            border: none;
-            font-weight: 700;
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 20px 12px;
+            border-bottom: 2px solid var(--line);
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .close-btn {
+            border: 2px solid var(--text);
+            background: var(--panel);
+            color: var(--text);
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
             cursor: pointer;
         }
 
-        button:hover {
-            filter: brightness(1.1);
+        .auth-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 2px solid var(--line);
         }
 
-        .secondary {
-            background: #1f2937;
+        .auth-tab {
+            border: none;
+            border-bottom: 3px solid transparent;
+            background: var(--panel-soft);
+            color: var(--muted);
+            font-weight: 700;
+            min-height: 48px;
+            cursor: pointer;
+        }
+
+        .auth-tab.active {
+            background: var(--panel);
+            color: var(--text);
+            border-bottom-color: var(--orange);
+        }
+
+        .auth-body {
+            padding: 20px;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 7px 10px;
+            background: var(--orange-soft);
+            color: var(--orange-dark);
+            border: 1px solid #f6d5b6;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: clamp(2.2rem, 5vw, 4.2rem);
+            line-height: 0.96;
+            letter-spacing: -0.06em;
+        }
+
+        .lead {
+            margin: 0 0 22px;
+            color: var(--muted);
+            font-size: 1.04rem;
+            line-height: 1.6;
+            max-width: 560px;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            padding: 14px 16px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+
+        .stat span {
+            color: var(--muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 22px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            letter-spacing: -0.04em;
+        }
+
+        .tag {
+            padding: 6px 8px;
+            background: var(--orange-soft);
+            color: var(--orange-dark);
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: 1px solid #f3d4b2;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        input {
+            width: 100%;
+            min-height: 46px;
+            background: #fff;
+            border: 2px solid var(--line);
+            padding: 0 12px;
+            color: var(--text);
+            font-size: 0.98rem;
+            border-radius: 0;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--orange);
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .inline-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .inline-row .btn {
+            flex: 0 0 auto;
+        }
+
+        .status {
+            min-height: 20px;
+            margin-top: 14px;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .status.error {
+            color: var(--error-text);
+        }
+
+        .status.success {
+            color: var(--success-text);
+        }
+
+        .muted-note {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            line-height: 1.5;
         }
 
         .result-box {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #dcfce7;
             display: none;
+            margin-top: 18px;
+            border: 2px solid var(--line);
+            background: var(--panel-soft);
+            padding: 16px;
         }
 
         .result-box.visible {
             display: block;
         }
 
-        .status {
-            margin-top: 12px;
-            color: #fcd34d;
-            min-height: 24px;
-            font-size: 0.9rem;
+        .result-box.error {
+            background: var(--error-bg);
+            border-color: #f6c6c6;
+            color: var(--error-text);
         }
 
-        .small-text {
-            font-size: 0.8rem;
-            color: #94a3b8;
+        .result-box.success {
+            background: var(--success-bg);
+            border-color: #bbf7d0;
+            color: var(--success-text);
+        }
+
+        .result-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .result-link {
+            color: var(--text);
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .qr-box {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .qr-box img {
+            width: 110px;
+            height: 110px;
+            border: 2px solid var(--text);
+            background: #fff;
+            padding: 6px;
+        }
+
+        .copy-btn {
+            background: var(--panel);
+            color: var(--text);
+            border: 2px solid var(--text);
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 840px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 540px) {
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="hero">
-            <h1>URL Shortener</h1>
-            <p>Quick mode + protected dashboard mode with analytics and QR support.</p>
-        </div>
+        <header class="topbar">
+            <div class="brand">
+                <span class="brand-mark">S</span>
+                <span>ShortURL</span>
+            </div>
 
-        <div class="grid">
-            <section class="card">
-                <h2>Quick Mode</h2>
-                <p class="small-text">Create a short URL without login.</p>
-                <form id="quickForm">
-                    <label for="quickUrl">Original URL</label>
-                    <input id="quickUrl" name="url" type="url" placeholder="https://example.com" required>
+            <div class="nav-actions">
+                <button id="loginToggleBtn" class="btn btn-secondary" type="button">Login</button>
+                <button id="signupToggleBtn" class="btn btn-ghost" type="button">Sign up</button>
+                <button id="logoutBtn" class="btn btn-ghost hidden" type="button">Logout</button>
+            </div>
+        </header>
 
-                    <label for="quickAlias">Custom alias (optional)</label>
-                    <input id="quickAlias" name="customAlias" type="text" placeholder="my-link">
+        <main class="hero">
+            <section class="hero-copy">
+                <span class="eyebrow">Free & simple</span>
+                <h1>Turn long links into short ones.</h1>
+                <p class="lead">Create clean shortened links in seconds. Use the free tool for instant sharing, or log
+                    in to unlock protected branded URLs with QR codes and tracking.</p>
 
-                    <button type="submit">Generate short URL</button>
-                </form>
-                <div id="quickResult" class="result-box"></div>
+                <div class="hero-actions">
+                    <button class="btn" type="button" onclick="document.getElementById('quickUrl').focus()">Create free
+                        link</button>
+                    <button class="btn btn-secondary" type="button"
+                        onclick="document.getElementById('loginToggleBtn').click()">Login</button>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <strong>1 click</strong>
+                        <span>Fast link</span>
+                    </div>
+                    <div class="stat">
+                        <strong>QR</strong>
+                        <span>Image ready</span>
+                    </div>
+                    <div class="stat">
+                        <strong>Live</strong>
+                        <span>Track visits</span>
+                    </div>
+                </div>
             </section>
 
-            <section class="card">
-                <h2>Account Access</h2>
-                <form id="signupForm">
-                    <label for="signupName">Name</label>
-                    <input id="signupName" name="name" type="text" placeholder="John Doe" required>
+            <section class="form-grid">
+                <div id="authModal" class="modal-overlay hidden" aria-hidden="true">
+                    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+                        <div class="modal-header">
+                            <h3 id="authModalTitle">Account</h3>
+                            <button class="close-btn" type="button" aria-label="Close modal"
+                                id="closeAuthModal">×</button>
+                        </div>
 
-                    <label for="signupEmail">Email</label>
-                    <input id="signupEmail" name="email" type="email" placeholder="john@example.com" required>
+                        <div class="auth-tabs">
+                            <button class="auth-tab active" type="button" data-mode="login">Login</button>
+                            <button class="auth-tab" type="button" data-mode="signup">Sign up</button>
+                        </div>
 
-                    <label for="signupPassword">Password</label>
-                    <input id="signupPassword" name="password" type="password" placeholder="••••••••" required>
+                        <div class="auth-body">
+                            <form id="loginForm" class="auth-form active">
+                                <div class="field">
+                                    <label class="label" for="loginEmail">Email</label>
+                                    <input id="loginEmail" name="email" type="email" placeholder="you@example.com"
+                                        required>
+                                </div>
 
-                    <button type="submit" class="secondary">Sign Up</button>
-                </form>
+                                <div class="field">
+                                    <label class="label" for="loginPassword">Password</label>
+                                    <input id="loginPassword" name="password" type="password"
+                                        placeholder="Your password" required>
+                                </div>
 
-                <form id="loginForm" style="margin-top: 20px;">
-                    <label for="loginEmail">Email</label>
-                    <input id="loginEmail" name="email" type="email" placeholder="john@example.com" required>
+                                <button class="btn" type="submit">Login</button>
+                                <div id="authStatus" class="status"></div>
+                            </form>
 
-                    <label for="loginPassword">Password</label>
-                    <input id="loginPassword" name="password" type="password" placeholder="••••••••" required>
+                            <form id="signupForm" class="auth-form">
+                                <div class="field">
+                                    <label class="label" for="signupName">Name</label>
+                                    <input id="signupName" name="name" type="text" placeholder="Your name" required>
+                                </div>
 
-                    <button type="submit">Login</button>
-                </form>
-                <div id="authStatus" class="status"></div>
+                                <div class="field">
+                                    <label class="label" for="signupEmail">Email</label>
+                                    <input id="signupEmail" name="email" type="email" placeholder="you@example.com"
+                                        required>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label" for="signupPassword">Password</label>
+                                    <input id="signupPassword" name="password" type="password"
+                                        placeholder="Create a password" required>
+                                </div>
+
+                                <button class="btn" type="submit">Create account</button>
+                                <div id="signupStatus" class="status"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Free URL Shortener</h2>
+                        <span class="tag">Free</span>
+                    </div>
+
+                    <form id="quickForm">
+                        <div class="field">
+                            <label class="label" for="quickUrl">Original URL</label>
+                            <input id="quickUrl" name="url" type="url" placeholder="https://example.com" required>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="quickAlias">Custom alias (optional)</label>
+                            <input id="quickAlias" name="customAlias" type="text" placeholder="my-link">
+                        </div>
+
+                        <button class="btn" type="submit">Generate short URL</button>
+                    </form>
+                    <div id="quickResult" class="result-box"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Protected URL</h2>
+                        <span class="tag">Login required</span>
+                    </div>
+
+                    <p class="muted-note" id="protectedHint">Log in to create a protected link with QR code and visitor
+                        tracking.</p>
+
+                    <form id="protectedForm">
+                        <div class="field">
+                            <label class="label" for="protectedUrl">Original URL</label>
+                            <input id="protectedUrl" name="url" type="url" placeholder="https://example.com" required
+                                disabled>
+                        </div>
+
+                        <div class="field">
+                            <label class="label" for="protectedAlias">Custom alias (optional)</label>
+                            <input id="protectedAlias" name="customAlias" type="text" placeholder="vip-link" disabled>
+                        </div>
+
+                        <button class="btn" type="submit" id="protectedSubmit" disabled>Generate protected URL</button>
+                    </form>
+                    <div id="protectedResult" class="result-box"></div>
+                </div>
             </section>
-
-            <section class="card">
-                <h2>Protected Mode</h2>
-                <p class="small-text">Use this mode after login to create short URLs with token-based authorization.</p>
-                <form id="protectedForm">
-                    <label for="protectedUrl">Original URL</label>
-                    <input id="protectedUrl" name="url" type="url" placeholder="https://example.com" required>
-
-                    <label for="protectedAlias">Custom alias (optional)</label>
-                    <input id="protectedAlias" name="customAlias" type="text" placeholder="vip-link">
-
-                    <button type="submit">Create with token</button>
-                </form>
-                <div id="protectedResult" class="result-box"></div>
-            </section>
-
-            <section class="card">
-                <h2>Analytics</h2>
-                <label for="analyticsShortId">Short ID</label>
-                <input id="analyticsShortId" type="text" placeholder="abc123">
-                <button id="analyticsButton" type="button">View analytics</button>
-                <div id="analyticsResult" class="result-box"></div>
-            </section>
-        </div>
+        </main>
     </div>
 
     <script>
-        const authStatus = document.getElementById('authStatus');
         const tokenKey = 'url-shortener-token';
-
-        function setToken(token) {
-            if (token) {
-                localStorage.setItem(tokenKey, token);
-                authStatus.textContent = 'Logged in successfully.';
-            }
-        }
+        const authModal = document.getElementById('authModal');
+        const loginToggleBtn = document.getElementById('loginToggleBtn');
+        const signupToggleBtn = document.getElementById('signupToggleBtn');
+        const closeAuthModalBtn = document.getElementById('closeAuthModal');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authStatus = document.getElementById('authStatus');
+        const signupStatus = document.getElementById('signupStatus');
+        const protectedForm = document.getElementById('protectedForm');
+        const protectedFields = protectedForm.querySelectorAll('input, button');
+        const protectedHint = document.getElementById('protectedHint');
 
         function getToken() {
             return localStorage.getItem(tokenKey);
         }
 
-        function showResult(elementId, message, isError = false) {
-            const result = document.getElementById(elementId);
-            result.innerHTML = message;
-            result.classList.add('visible');
-            result.style.background = isError ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.1)';
-            result.style.borderColor = isError ? 'rgba(239, 68, 68, 0.5)' : 'rgba(34, 197, 94, 0.5)';
-            result.style.color = isError ? '#fecaca' : '#dcfce7';
+        function setAuthUi(isLoggedIn, userName = '') {
+            if (isLoggedIn) {
+                loginToggleBtn.textContent = userName ? `Logged in as ${userName}` : 'Logged in';
+                signupToggleBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                protectedHint.textContent = 'Your protected URL is ready to create.';
+                protectedFields.forEach((field) => field.disabled = false);
+            } else {
+                loginToggleBtn.textContent = 'Login';
+                signupToggleBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                protectedHint.textContent = 'Log in to create a protected link with QR code and visitor tracking.';
+                protectedFields.forEach((field) => field.disabled = true);
+            }
         }
 
-        document.getElementById('signupForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const form = event.currentTarget;
-            const payload = Object.fromEntries(new FormData(form).entries());
+        function showResult(targetId, html, type = 'success') {
+            const result = document.getElementById(targetId);
+            result.className = `result-box visible ${type}`;
+            result.innerHTML = html;
+            bindCopyButtons(result);
+        }
 
-            const response = await fetch('/user/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+        function bindCopyButtons(container) {
+            container.querySelectorAll('[data-copy]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const value = button.getAttribute('data-copy');
+                    try {
+                        await navigator.clipboard.writeText(value);
+                        button.textContent = 'Copied';
+                        setTimeout(() => { button.textContent = 'Copy'; }, 1200);
+                    } catch (error) {
+                        button.textContent = 'Failed';
+                    }
+                });
+            });
+        }
+
+        function openAuthModal(mode = 'login') {
+            authModal.classList.remove('hidden');
+            authModal.setAttribute('aria-hidden', 'false');
+
+            document.querySelectorAll('.auth-tab').forEach((tab) => {
+                const isActive = tab.dataset.mode === mode;
+                tab.classList.toggle('active', isActive);
             });
 
-            const data = await response.json();
-            authStatus.textContent = data.error || data.message || 'Signup complete.';
+            document.querySelectorAll('.auth-form').forEach((form) => {
+                form.classList.toggle('active', form.id === (mode === 'login' ? 'loginForm' : 'signupForm'));
+            });
+        }
+
+        function closeAuthModal() {
+            authModal.classList.add('hidden');
+            authModal.setAttribute('aria-hidden', 'true');
+        }
+
+        document.querySelectorAll('.auth-tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                openAuthModal(tab.dataset.mode);
+            });
+        });
+
+        closeAuthModalBtn.addEventListener('click', closeAuthModal);
+        authModal.addEventListener('click', (event) => {
+            if (event.target === authModal) closeAuthModal();
+        });
+
+        loginToggleBtn.addEventListener('click', () => {
+            if (getToken()) return;
+            openAuthModal('login');
+        });
+
+        signupToggleBtn.addEventListener('click', () => {
+            openAuthModal('signup');
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem(tokenKey);
+            setAuthUi(false);
+            authStatus.textContent = 'Logged out';
+            authStatus.className = 'status';
+            signupStatus.textContent = '';
+            signupStatus.className = 'status';
         });
 
         document.getElementById('loginForm').addEventListener('submit', async (event) => {
             event.preventDefault();
-            const form = event.currentTarget;
-            const payload = Object.fromEntries(new FormData(form).entries());
+            const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
 
             const response = await fetch('/user/login', {
                 method: 'POST',
@@ -244,10 +729,44 @@
             });
 
             const data = await response.json();
-            if (data.token) {
-                setToken(data.token);
+            if (!response.ok) {
+                authStatus.className = 'status error';
+                authStatus.textContent = data.error || 'Login failed';
+                return;
             }
-            authStatus.textContent = data.error || data.message || 'Login successful.';
+
+            if (data.token) {
+                localStorage.setItem(tokenKey, data.token);
+                authStatus.className = 'status success';
+                authStatus.textContent = `Welcome back, ${data.user?.name || 'User'}`;
+                setAuthUi(true, data.user?.name || 'User');
+                closeAuthModal();
+            }
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+
+            const response = await fetch('/user/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                signupStatus.className = 'status error';
+                signupStatus.textContent = data.error || 'Signup failed';
+                return;
+            }
+
+            signupStatus.className = 'status success';
+            signupStatus.textContent = data.message || 'Signup successful';
+            event.currentTarget.reset();
+            openAuthModal('login');
+            authStatus.className = 'status';
+            authStatus.textContent = 'Account created. Please login.';
         });
 
         document.getElementById('quickForm').addEventListener('submit', async (event) => {
@@ -262,53 +781,66 @@
 
             const data = await response.json();
             if (!response.ok) {
-                showResult('quickResult', data.error || 'Request failed.', true);
+                showResult('quickResult', data.error || 'Request failed.', 'error');
                 return;
             }
 
-            showResult('quickResult', `<strong>Short URL:</strong> <a href="${data.shortURL}" target="_blank" style="color:#fff;">${data.shortURL}</a><br><strong>QR:</strong> <a href="${data.qrCode}" target="_blank" style="color:#fff;">${data.qrCode}</a>`);
+            showResult('quickResult', `
+                <div class="result-row">
+                    <a class="result-link" href="${data.shortURL}" target="_blank">${data.shortURL}</a>
+                    <button class="btn copy-btn" type="button" data-copy="${data.shortURL}">Copy</button>
+                </div>
+                <div class="qr-box">
+                    <img src="${data.qrCode}" alt="QR code for ${data.shortURL}">
+                    <div>
+                        <div><strong>QR code ready</strong></div>
+                        <a href="${data.qrCode}" target="_blank">Open image</a>
+                    </div>
+                </div>
+            `, 'success');
         });
 
         document.getElementById('protectedForm').addEventListener('submit', async (event) => {
             event.preventDefault();
-            const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
             const token = getToken();
+            if (!token) {
+                showResult('protectedResult', 'Please login before creating a protected URL.', 'error');
+                openAuthModal('login');
+                return;
+            }
 
+            const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
             const response = await fetch('/url', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify(payload),
             });
 
             const data = await response.json();
             if (!response.ok) {
-                showResult('protectedResult', data.error || 'Protected request failed.', true);
+                showResult('protectedResult', data.error || 'Protected request failed.', 'error');
                 return;
             }
 
-            showResult('protectedResult', `<strong>Short URL:</strong> <a href="${data.shortURL}" target="_blank" style="color:#fff;">${data.shortURL}</a><br><strong>QR:</strong> <a href="${data.qrCode}" target="_blank" style="color:#fff;">${data.qrCode}</a>`);
+            showResult('protectedResult', `
+                <div class="result-row">
+                    <a class="result-link" href="${data.shortURL}" target="_blank">${data.shortURL}</a>
+                    <button class="btn copy-btn" type="button" data-copy="${data.shortURL}">Copy</button>
+                </div>
+                <div class="qr-box">
+                    <img src="${data.qrCode}" alt="QR code for ${data.shortURL}">
+                    <div>
+                        <div><strong>Protected QR ready</strong></div>
+                        <a href="${data.qrCode}" target="_blank">Open image</a>
+                    </div>
+                </div>
+            `, 'success');
         });
 
-        document.getElementById('analyticsButton').addEventListener('click', async () => {
-            const shortId = document.getElementById('analyticsShortId').value.trim();
-            if (!shortId) {
-                showResult('analyticsResult', 'Please enter a short ID.', true);
-                return;
-            }
-
-            const response = await fetch(`/url/analytics/${shortId}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                showResult('analyticsResult', data.error || 'Analytics not found.', true);
-                return;
-            }
-
-            showResult('analyticsResult', `<strong>Total Clicks:</strong> ${data.totalClicks}<br><pre style="white-space:pre-wrap; color:#fff;">${JSON.stringify(data.analytics, null, 2)}</pre>`);
-        });
+        setAuthUi(Boolean(getToken()));
     </script>
 </body>
 

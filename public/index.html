@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shortify</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca'
+                        }
+                    },
+                    boxShadow: {
+                        soft: '0 10px 30px rgba(15, 23, 42, 0.08)'
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body class="bg-slate-100 text-slate-800 antialiased">
+    <div class="flex min-h-screen overflow-hidden">
+        <aside class="hidden w-64 flex-col border-r border-slate-200 bg-white/90 p-5 backdrop-blur md:flex">
+            <div class="mb-8 flex items-center gap-3">
+                <div
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-lg font-semibold text-white shadow-soft">
+                    S</div>
+                <div>
+                    <p class="text-base font-bold tracking-tight">Shortify</p>
+                    <p class="text-[11px] text-slate-500">Link management</p>
+                </div>
+            </div>
+
+            <nav class="space-y-2">
+                <button
+                    class="nav-item active w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-900">
+                    Dashboard
+                </button>
+                <button
+                    class="nav-item w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100">
+                    Analytics
+                </button>
+                <button
+                    class="nav-item w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100">
+                    Settings
+                </button>
+            </nav>
+
+            <div class="mt-auto rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Overview</p>
+                <p class="mt-2 text-2xl font-bold text-slate-900" id="sidebarTotalLinks">0</p>
+                <p class="text-sm text-slate-500">Active links</p>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-3 md:p-5">
+            <header
+                class="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-xs font-medium uppercase tracking-[0.18em] text-brand-600">Overview</p>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-900">Short links dashboard</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="userBadge"
+                        class="hidden items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">
+                        <span class="inline-block h-2 w-2 rounded-full bg-brand-500"></span>
+                        <span id="userName">admin</span>
+                    </div>
+                    <button id="logoutBtn"
+                        class="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
+                        Log out
+                    </button>
+                    <button id="openCreateModal"
+                        class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-500/20 transition hover:bg-brand-700">
+                        + Create New
+                    </button>
+                </div>
+            </header>
+
+            <section class="grid h-[calc(100vh-120px)] gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+                <div class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                    <div class="mb-3 flex items-center justify-between">
+                        <h2 class="text-base font-semibold text-slate-900">Recent links</h2>
+                        <span id="linkCountBadge"
+                            class="rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700">0
+                            items</span>
+                    </div>
+                    <div id="linksList" class="h-[calc(100%-44px)] space-y-3 overflow-y-auto pr-1"></div>
+                </div>
+
+                <aside id="analyticsPanel" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h2 class="text-base font-semibold text-slate-900">Analytics</h2>
+                    </div>
+
+                    <div class="mb-4 grid grid-cols-2 gap-3">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">Clicks</p>
+                            <p id="totalClicks" class="mt-2 text-2xl font-bold text-slate-900">0</p>
+                        </div>
+                        <div class="rounded-xl bg-brand-50 p-3">
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-brand-600">CTR</p>
+                            <p id="clickRate" class="mt-2 text-2xl font-bold text-brand-700">0%</p>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <p class="mb-2 text-sm font-medium text-slate-600">Trend</p>
+                        <canvas id="clickChart" height="150"></canvas>
+                    </div>
+
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-slate-600">Top referrers</p>
+                            <div id="referrerList" class="space-y-2"></div>
+                        </div>
+
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-slate-600">Device split</p>
+                            <div id="deviceList" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <div id="modalBackdrop" class="fixed inset-0 z-40 hidden bg-slate-900/40 backdrop-blur-sm"></div>
+
+    <div id="createModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl">
+            <div class="mb-5 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-brand-600">Create</p>
+                    <h3 class="text-2xl font-bold text-slate-900">New short link</h3>
+                </div>
+                <button id="closeModal"
+                    class="rounded-full bg-slate-100 p-2 text-slate-500 transition hover:bg-slate-200">✕</button>
+            </div>
+
+            <form id="createLinkForm" class="space-y-4">
+                <div>
+                    <label for="linkTitle" class="mb-2 block text-sm font-medium text-slate-700">Title</label>
+                    <input id="linkTitle" name="title" type="text" placeholder="Spring campaign landing page"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-brand-500 focus:bg-white" />
+                </div>
+
+                <div>
+                    <label for="longUrl" class="mb-2 block text-sm font-medium text-slate-700">Destination URL</label>
+                    <input id="longUrl" name="url" type="url" required placeholder="https://example.com/product"
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-brand-500 focus:bg-white" />
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                        <label for="customCode" class="mb-2 block text-sm font-medium text-slate-700">Custom
+                            back-half</label>
+                        <input id="customCode" name="customCode" type="text" placeholder="launch-2026"
+                            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-brand-500 focus:bg-white" />
+                    </div>
+
+                    <div class="flex items-end">
+                        <div
+                            class="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-sm text-slate-500">
+                            Auto-generated if left blank
+                        </div>
+                    </div>
+                </div>
+
+                <div id="formError"
+                    class="hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"></div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="cancelCreate"
+                        class="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100">Cancel</button>
+                    <button type="submit"
+                        class="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700">Save
+                        Link</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+
+</html>
