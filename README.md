@@ -1,114 +1,86 @@
 # URL Shortener
 
-A high-performance, structured URL shortener service built with Node.js and Express to convert long, cumbersome URLs into clean, compact, and shareable links.
+A simple URL shortener built with Node.js, Express, MongoDB, and QR code generation.
 
-## 📁 Repository Architecture
+## Features
 
-This project follows an organized, enterprise-ready MVC/Service layout:
-*   `controllers/` - Handles incoming API requests and manages route payloads.
-*   `middlewares/` - Intercepts requests for authentication, validation, or rate-limiting.
-*   `models/` - Declares schemas and defines persistence models for the link database.
-*   `routes/` - Maps incoming URL paths to their respective core logical controller handlers.
-*   `services/` - Houses isolated business operations (e.g., hash generation, custom code validation).
-*   `views/` - Stores templates or server-side pages for short link redirect landing states.
-*   `connection.js` - Sets up and exports database connectivity profiles.
-*   `index.js` - The main entry point initializing the Express server application engine.
+- Create short URLs
+- Redirect short URLs to original destinations
+- Track visit history
+- Generate QR code for each short URL
+- JWT-based auth middleware for URL creation
+- MongoDB persistence
 
----
+## Local Setup
 
-## 🔄 Project Flow & Architecture
+1. Install dependencies:
 
-The system uses standard-compliant charts to handle requests.
+   ```bash
+   npm install
+   ```
 
-### 1. Shortening Flow (Request Lifecycle)
-sequenceDiagram
-    autonumber
-    actor User as "Client App / Browser"
-    participant Middleware as "Middlewares (Rate Limiter)"
-    participant Routes as "Routes Router"
-    participant Ctrl as "Controllers Engine"
-    database Cache as "Redis Cache"
-    database DB as "Database Engine"
+2. Create a local environment file:
 
-    User->>Middleware: POST /api/shorten
-    alt Rate Limit Exceeded
-        Middleware-->>User: Return "429 Too Many Requests"
-    else Under Limit Threshold
-        Middleware->>Routes: Forward Request
-        Routes->>Ctrl: Execute shortener controller
-        
-        Ctrl->>DB: Check custom alias collision / Save record
-        DB-->>Ctrl: Write success
-        
-        Ctrl->>Cache: Cache link mapping (TTL: 24h)
-        Cache-->>Ctrl: Cache set confirmation
-        
-        Ctrl-->>User: Return "201 Created" { shortUrl: "http://short.ly" }
-    end
+   ```bash
+   cp .env.example .env
+   ```
 
+3. Start the app:
 
-### 2. Redirection Strategy (Visiting a Short Link)
-This flow shows lookup processes optimizing quick browser redirection.
+   ```bash
+   npm run dev
+   ```
 
-```mermaid
-graph TD
-    A["User visits http://short.ly"] --> B["index.js handles route request"]
-    B --> C["routes/ handle shortCode path lookup"]
-    C --> D{"Check Database Matching"}
-    D -->|Found| E["Increment click analytics tracking metrics"]
-    D -->|Not Found| F["Render error state inside views/ 404 template"]
-    E --> G["Respond with HTTP 301 Moved Permanently redirection status"]
-    G --> H["Browser instantly redirects user to target longUrl path"]
-```
+4. Open:
 
----
+   ```bash
+   http://localhost:8000
+   ```
 
-## 🛠️ Getting Started
+## Environment Variables
 
-### 1. Installation
+- `PORT`: port for the server
+- `MONGO_URI`: MongoDB connection string
+- `APP_URL`: full public URL of the deployed app, for example `https://my-app.onrender.com`
+- `JWT_SECRET`: secret used for signing JWT tokens
 
-Clone your repository locally and install the mandatory npm packages managed in your `package.json`:
+## Deployment on Render
 
-```bash
-npm install
-```
+1. Create a new Web Service on Render.
+2. Connect this repository.
+3. Set the build command:
 
-### 2. Configuration
+   ```bash
+   npm install
+   ```
 
-Create an environment configuration file named `.env` in the root folder directory path:
+4. Set the start command:
 
-```env
-PORT=3000
-DB_URI=mongodb://localhost:27017/url_shortener
-BASE_URL=http://localhost:3000/
-```
+   ```bash
+   npm start
+   ```
 
-### 3. Execution
+5. Add environment variables:
+   - `MONGO_URI` = your MongoDB Atlas URI
+   - `APP_URL` = your Render URL
+   - `JWT_SECRET` = a strong random secret
+   - `PORT` = `10000` or the default Render-provided port if required
 
-Launch the backend framework engine service locally:
+6. Deploy.
+
+## Deployment on Railway, Heroku, or similar
+
+Use the same environment variables and set:
 
 ```bash
-# Start standard execution engine
 npm start
-
-# Run in development mode (if nodemon is configured)
-npm run dev
 ```
 
----
+Make sure your database is reachable from the host and your `APP_URL` matches the deployed public URL.
 
-## 🔌 API Documentation Reference
+## Notes
 
-### Generate Shortcuts
-*   **Endpoint:** `POST /api/shorten`
-*   **Payload Layout Format:**
-    ```json
-    {
-      "longUrl": "https://github.com"
-    }
-    ```
-*   **Success Status:** `201 Created`
+- QR code images are saved under `public/qrcodes/`.
+- The app expects a MongoDB instance to be available at runtime.
+- For production, use a real MongoDB service such as MongoDB Atlas.
 
-### Direct Forward Lookup
-*   **Endpoint:** `GET /:shortCode`
-*   **Action Output:** Automatically returns an **HTTP 301 Redirect** response header pointing to the destination server web address.

@@ -1,53 +1,39 @@
-const express = require("express"); // Import Express Library
-const { connectMongoDB } = require("./connection"); // Connect 
-const path=require("path");// Server side Renderning
+require("dotenv").config();
 
-
+const express = require("express");
+const path = require("path");
+const { connectMongoDB } = require("./connection");
 
 const app = express();
-// SSR
+const PORT = process.env.PORT || 8000;
 
 app.set("view engine", "ejs");
+app.set("views", path.resolve(__dirname, "views"));
 
-app.set(
-    "views",
-    path.resolve("./views")
-);
-
-
-connectMongoDB().then(() => console.log("MongoDB Connected"));
+connectMongoDB()
+    .then(() => console.log("MongoDB Connected"))
+    .catch((error) => {
+        console.error("MongoDB connection failed:", error.message);
+    });
 
 const urlRoute = require("./routes/url");
 const URL = require("./models/url");
-
-const staticRouter = require(
-    "./routes/staticRouter"
-);
-// Now Connect the User part 
-
-const userRoute=require("./routes/user");
-
+const staticRouter = require("./routes/staticRouter");
+const userRoute = require("./routes/user");
 
 app.use(express.json());
-
 app.use(
     express.urlencoded({
         extended: false,
     })
 );
 
-app.use(express.static("public")); // for Image Qr ocde
+app.use(express.static(path.join(__dirname, "public")));
 
-
-app.use("/url", urlRoute); // urlRoute
-app.use(
-    "/user",
-    userRoute
-);// userRoute
-
+app.use("/url", urlRoute);
+app.use("/user", userRoute);
 
 app.get("/:shortId", async (req, res) => {
-
     const shortId = req.params.shortId;
 
     const entry = await URL.findOneAndUpdate(
@@ -67,11 +53,11 @@ app.get("/:shortId", async (req, res) => {
         return res.status(404).send("Short URL Not Found");
     }
 
-    res.redirect(entry.redirectURL);
+    return res.redirect(entry.redirectURL);
 });
 
 app.use("/", staticRouter);
 
-app.listen(8000, () => {
-    console.log("Server Started");
+app.listen(PORT, () => {
+    console.log(`Server Started on port ${PORT}`);
 });

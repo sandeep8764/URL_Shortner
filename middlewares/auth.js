@@ -1,16 +1,22 @@
 
+const { validateToken } = require("../services/auth");
 
-const { validateToken } =
-    require("../services/auth");
+function extractTokenFromHeader(authHeader) {
+    if (!authHeader) {
+        return null;
+    }
 
-function restrictToLoggedInUserOnly(
-    req,
-    res,
-    next
-) {
+    const normalized = authHeader.trim();
 
-    const token =
-        req.headers.authorization;
+    if (normalized.startsWith("Bearer ")) {
+        return normalized.replace("Bearer ", "").trim();
+    }
+
+    return normalized;
+}
+
+function restrictToLoggedInUserOnly(req, res, next) {
+    const token = extractTokenFromHeader(req.headers.authorization);
 
     if (!token) {
         return res.status(401).json({
@@ -19,16 +25,10 @@ function restrictToLoggedInUserOnly(
     }
 
     try {
-
-        const user =
-            validateToken(token);
-
+        const user = validateToken(token);
         req.user = user;
-
-        next();
-
+        return next();
     } catch {
-
         return res.status(401).json({
             error: "Invalid Token",
         });
@@ -37,4 +37,5 @@ function restrictToLoggedInUserOnly(
 
 module.exports = {
     restrictToLoggedInUserOnly,
+    extractTokenFromHeader,
 };

@@ -7,28 +7,13 @@ const {
 } = require("../controllers/url");
 
 const router = express.Router();
-// For the Middleware Auth
 const {
     restrictToLoggedInUserOnly,
-} = require(
-    "../middlewares/auth"
-);
+} = require("../middlewares/auth");
 
-router.post(
-    "/",
-     restrictToLoggedInUserOnly,
-    handleGenerateShortURL
-);
-
-router.get(
-    "/analytics/:shortId",
-    handleGetAnalytics
-);
-router.get(
-    "/qr/:shortId", handleGetQRCode
-    
-);
-
-
+router.post("/quick", handleGenerateShortURL);
+router.post("/", restrictToLoggedInUserOnly, handleGenerateShortURL);
+router.get("/analytics/:shortId", handleGetAnalytics);
+router.get("/qr/:shortId", handleGetQRCode);
 
 module.exports = router;
